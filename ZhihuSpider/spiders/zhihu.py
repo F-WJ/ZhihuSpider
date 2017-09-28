@@ -3,6 +3,13 @@ import scrapy
 import re
 import json
 
+try:
+    # python 2,主要处理域名不全问题
+    import urlparse as parse
+except:
+    # python 3
+    from urllib import parse
+
 
 # 相关文档： https://doc.scrapy.org/en/1.3/topics/spiders.html?highlight=parse
 class ZhihuSpider(scrapy.Spider):
@@ -18,9 +25,23 @@ class ZhihuSpider(scrapy.Spider):
         "User-Agent": agent
     }
 
+    # 默认是从这里开始运行，但因为start_requests函数存在
     def parse(self, response):
-        pass
+        """
+        提取出html页面中的所有url并跟踪这些url进行一步爬取
+        如果提取的url中格式为 /question/xxx 就下载之后直接进入解析函数
+        """
+        # 具体css中文文档：http://scrapy-chs.readthedocs.io/zh_CN/0.24/topics/selectors.html
+        # 1.4官方英文文档：https://doc.scrapy.org/en/latest/topics/selectors.html?highlight=selectors
+        all_urls = response.css("a::attr(href)").extract()
+        # urljoin官方文档：https://doc.scrapy.org/en/latest/topics/request-response.html?highlight=urljoin
+        all_urls = [parse.urljoin(response.url, url) for url in all_urls]
+        # 过滤javascript代码
+        for url in all_urls:
+            pass
 
+
+    # 根据官方文档理解优先从这边开始
     # 登录账号
     def start_requests(self):
         # 获取首页
